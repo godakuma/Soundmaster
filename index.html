@@ -110,6 +110,12 @@
             background: #8a3a3a;
         }
 
+        .btn-danger:disabled {
+            background: #4a3a3a;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
         .btn:hover {
             transform: translateY(-1px);
         }
@@ -173,6 +179,23 @@
             padding: 12px;
             border-left: 4px solid #d4af37;
             transition: all 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .sound-checkbox {
+            margin-top: 4px;
+        }
+
+        .sound-checkbox input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .sound-content {
+            flex: 1;
         }
 
         .sound-header {
@@ -226,16 +249,11 @@
             background: #4a6a8a;
         }
 
-        .control-btn.remove {
-            background: #6a2a2a;
-        }
-
         .control-btn:hover {
             filter: brightness(1.1);
             transform: scale(1.02);
         }
 
-        /* Controle de volume */
         .volume-control {
             display: flex;
             align-items: center;
@@ -303,6 +321,12 @@
             background: #5d4723;
             border-radius: 10px;
         }
+
+        .delete-bar {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: flex-end;
+        }
     </style>
 </head>
 <body>
@@ -322,6 +346,9 @@
             <button class="btn btn-success" id="btnExportList">💾 Exportar Lista</button>
             <button class="btn" id="btnImportList">📂 Importar Lista</button>
             <input type="file" id="importFileInput" accept=".json" style="display: none;">
+        </div>
+        <div class="delete-bar">
+            <button class="btn btn-danger" id="btnDeleteSelected" disabled>🗑️ Excluir Selecionados</button>
         </div>
     </div>
 
@@ -364,6 +391,7 @@
     const btnAddSound = document.getElementById('btnAddSound');
     const btnExportList = document.getElementById('btnExportList');
     const btnImportList = document.getElementById('btnImportList');
+    const btnDeleteSelected = document.getElementById('btnDeleteSelected');
     const importFileInput = document.getElementById('importFileInput');
     const soundModal = document.getElementById('soundModal');
     const btnCancelModal = document.getElementById('btnCancelModal');
@@ -480,16 +508,19 @@
         }
     }
 
-    function removeSound(soundId) {
-        const audio = audioElements[soundId];
-        if (audio) {
-            audio.pause();
-            audio.src = '';
-            delete audioElements[soundId];
-        }
-        sounds = sounds.filter(s => s.id !== soundId);
+    function removeSounds(soundIds) {
+        soundIds.forEach(soundId => {
+            const audio = audioElements[soundId];
+            if (audio) {
+                audio.pause();
+                audio.src = '';
+                delete audioElements[soundId];
+            }
+        });
+        sounds = sounds.filter(s => !soundIds.includes(s.id));
         renderSounds();
         saveToStorage();
+        updateDeleteButtonState();
     }
 
     function updateSoundUI(soundId) {
@@ -524,6 +555,12 @@
         }
     }
 
+    function updateDeleteButtonState() {
+        if (!btnDeleteSelected) return;
+        const checkedBoxes = document.querySelectorAll('.sound-checkbox input:checked');
+        btnDeleteSelected.disabled = checkedBoxes.length === 0;
+    }
+
     // =========================================
     // RENDERIZAÇÃO
     // =========================================
@@ -532,6 +569,7 @@
         
         if (sounds.length === 0) {
             soundsContainer.innerHTML = '<div class="no-sounds">📢 Nenhum som disponível.</div>';
+            updateDeleteButtonState();
             return;
         }
         
@@ -546,20 +584,24 @@
             const volumePercent = Math.round((sound.volume !== undefined ? sound.volume : 0.7) * 100);
             
             card.innerHTML = `
-                <div class="sound-header">
-                    <div class="sound-name">${escapeHtml(sound.nome)}</div>
-                    <div class="sound-controls">
-                        <button class="control-btn ${playBtnClass}" data-action="play" data-id="${sound.id}">${playBtnText}</button>
-                        <button class="control-btn pause" data-action="pause" data-id="${sound.id}">⏸️</button>
-                        ${isGM ? `<button class="control-btn remove" data-action="remove" data-id="${sound.id}">🗑️</button>` : ''}
+                <div class="sound-checkbox">
+                    <input type="checkbox" data-id="${sound.id}" class="sound-select">
+                </div>
+                <div class="sound-content">
+                    <div class="sound-header">
+                        <div class="sound-name">${escapeHtml(sound.nome)}</div>
+                        <div class="sound-controls">
+                            <button class="control-btn ${playBtnClass}" data-action="play" data-id="${sound.id}">${playBtnText}</button>
+                            <button class="control-btn pause" data-action="pause" data-id="${sound.id}">⏸️</button>
+                        </div>
                     </div>
+                    <div class="volume-control">
+                        <span class="volume-label">🔊 Vol</span>
+                        <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="${sound.volume !== undefined ? sound.volume : 0.7}" data-action="volume" data-id="${sound.id}">
+                        <span class="volume-value">${volumePercent}%</span>
+                    </div>
+                    <div class="sound-url">${escapeHtml(sound.url)}</div>
                 </div>
-                <div class="volume-control">
-                    <span class="volume-label">🔊 Vol</span>
-                    <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="${sound.volume !== undefined ? sound.volume : 0.7}" data-action="volume" data-id="${sound.id}">
-                    <span class="volume-value">${volumePercent}%</span>
-                </div>
-                <div class="sound-url">${escapeHtml(sound.url)}</div>
             `;
             soundsContainer.appendChild(card);
         });
@@ -592,17 +634,13 @@
             });
         });
         
-        if (isGM) {
-            document.querySelectorAll('[data-action="remove"]').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const id = btn.getAttribute('data-id');
-                    if (confirm('Remover este som da lista?')) {
-                        removeSound(id);
-                    }
-                });
+        document.querySelectorAll('.sound-select').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                updateDeleteButtonState();
             });
-        }
+        });
+        
+        updateDeleteButtonState();
     }
 
     // =========================================
@@ -637,6 +675,19 @@
         return true;
     }
     
+    function deleteSelectedSounds() {
+        const selectedIds = [];
+        document.querySelectorAll('.sound-select:checked').forEach(checkbox => {
+            selectedIds.push(checkbox.getAttribute('data-id'));
+        });
+        
+        if (selectedIds.length === 0) return;
+        
+        if (confirm(`Tem certeza que deseja excluir ${selectedIds.length} som(ns) selecionado(s)?`)) {
+            removeSounds(selectedIds);
+        }
+    }
+    
     function exportSounds() {
         const exportData = sounds.map(s => ({
             nome: s.nome,
@@ -662,9 +713,8 @@
                     let count = 0;
                     imported.forEach(item => {
                         if (item.nome && item.url) {
-                            const newId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6) + '_' + count;
                             sounds.push({
-                                id: newId,
+                                id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6) + '_' + count,
                                 nome: item.nome,
                                 url: item.url,
                                 playing: false,
@@ -756,6 +806,8 @@
                 soundUrlInput.value = '';
                 soundModal.style.display = 'flex';
             });
+            
+            btnDeleteSelected.addEventListener('click', deleteSelectedSounds);
             
             btnCancelModal.addEventListener('click', () => {
                 soundModal.style.display = 'none';
