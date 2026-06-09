@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundMaster - Áudio para Owlbear</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e0e0e0;
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(30, 30, 35, 0.95);
+            border-radius: 16px;
+            border: 1px solid #444;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #d4af37;
+            font-size: 24px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        h1 small {
+            font-size: 12px;
+            color: #888;
+            font-weight: normal;
+        }
+
+        .sub {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        .gm-badge {
+            background: #4a6a8a;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-bottom: 15px;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            background: #3a3a3a;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #5d4723;
+        }
+
+        .btn-primary:hover {
+            background: #7a5c30;
+        }
+
+        .btn-success {
+            background: #2a5a2a;
+        }
+
+        .btn-success:hover {
+            background: #3a7a3a;
+        }
+
+        .btn-danger {
+            background: #6a2a2a;
+        }
+
+        .btn-danger:hover {
+            background: #8a3a3a;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #2a2a2a;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #d4af37;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #d4af37;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: #1a1a1a;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .sounds-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .sound-card {
+            background: #252525;
+            border-radius: 12px;
+            padding: 12px;
+            border-left: 4px solid #d4af37;
+            transition: all 0.2s;
+        }
+
+        .sound-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sound-name {
+            font-weight: bold;
+            font-size: 15px;
+            color: #d4af37;
+            word-break: break-word;
+            flex: 1;
+        }
+
+        .sound-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: #3a3a3a;
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn.play {
+            background: #2a5a2a;
+        }
+
+        .control-btn.play.playing {
+            background: #8a3a3a;
+        }
+
+        .control-btn.pause {
+            background: #4a6a8a;
+        }
+
+        .control-btn.remove {
+            background: #6a2a2a;
+        }
+
+        .control-btn:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
+        }
+
+        /* Controle de volume */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .volume-label {
+            font-size: 11px;
+            color: #aaa;
+            width: 35px;
+        }
+
+        .volume-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #444;
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #d4af37;
+            cursor: pointer;
+        }
+
+        .volume-value {
+            font-size: 10px;
+            color: #d4af37;
+            min-width: 35px;
+            text-align: right;
+        }
+
+        .sound-url {
+            font-size: 10px;
+            color: #666;
+            margin-top: 6px;
+            word-break: break-all;
+            font-family: monospace;
+        }
+
+        .no-sounds {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+
+        .sounds-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sounds-list::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+        .sounds-list::-webkit-scrollbar-thumb {
+            background: #5d4723;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>
+        🎵 SoundMaster 
+        <small>para Owlbear Rodeo</small>
+    </h1>
+    <div class="sub">Reprodução simultânea de áudios via Dropbox</div>
+
+    <div id="gmControls" style="display: none;">
+        <div style="text-align: center; margin-bottom: 15px;">
+            <span class="gm-badge">👑 Modo Mestre</span>
+        </div>
+        <div class="action-bar">
+            <button class="btn btn-primary" id="btnAddSound">➕ Adicionar Som</button>
+            <button class="btn btn-success" id="btnExportList">💾 Exportar Lista</button>
+            <button class="btn" id="btnImportList">📂 Importar Lista</button>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+        </div>
+    </div>
+
+    <div id="playerMode" style="display: none; text-align: center; margin-bottom: 15px;">
+        <span class="gm-badge" style="background: #2a4a2a;">🎧 Modo Jogador</span>
+    </div>
+
+    <div id="soundsContainer" class="sounds-list">
+        <div class="no-sounds">📢 Nenhum som disponível.</div>
+    </div>
+</div>
+
+<!-- Modal de adicionar som -->
+<div id="soundModal" class="modal">
+    <div class="modal-content">
+        <h3>➕ Adicionar Novo Som</h3>
+        <input type="text" id="soundName" placeholder="Nome do som (ex: Trovão, Música de Batalha...)" autocomplete="off">
+        <input type="text" id="soundUrl" placeholder="URL do Dropbox (link compartilhável)" autocomplete="off">
+        <div class="modal-buttons">
+            <button class="btn" id="btnCancelModal">Cancelar</button>
+            <button class="btn btn-primary" id="btnConfirmModal">Adicionar</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import OBR from "@owlbear-rodeo/sdk";
+
+    // =========================================
+    // VARIÁVEIS GLOBAIS
+    // =========================================
+    let isGM = false;
+    let audioElements = {};
+    let sounds = [];
+    let currentPlayerId = null;
+
+    const soundsContainer = document.getElementById('soundsContainer');
+    const gmControls = document.getElementById('gmControls');
+    const playerMode = document.getElementById('playerMode');
+    const btnAddSound = document.getElementById('btnAddSound');
+    const btnExportList = document.getElementById('btnExportList');
+    const btnImportList = document.getElementById('btnImportList');
+    const importFileInput = document.getElementById('importFileInput');
+    const soundModal = document.getElementById('soundModal');
+    const btnCancelModal = document.getElementById('btnCancelModal');
+    const btnConfirmModal = document.getElementById('btnConfirmModal');
+    const soundNameInput = document.getElementById('soundName');
+    const soundUrlInput = document.getElementById('soundUrl');
+
+    // =========================================
+    // FUNÇÕES DE ÁUDIO
+    // =========================================
+    function createAudioElement(sound) {
+        const audio = new Audio();
+        audio.src = sound.url;
+        audio.loop = false;
+        audio.preload = 'auto';
+        audio.volume = (sound.volume !== undefined) ? sound.volume : 0.7;
+        
+        if (sound.currentTime && sound.currentTime > 0) {
+            audio.currentTime = sound.currentTime;
+        }
+        
+        audio.onended = () => {
+            const s = sounds.find(item => item.id === sound.id);
+            if (s) {
+                s.playing = false;
+                updateSoundUI(sound.id);
+                saveToStorage();
+            }
+        };
+        
+        return audio;
+    }
+
+    function setVolume(soundId, volume) {
+        const sound = sounds.find(s => s.id === soundId);
+        if (!sound) return;
+        
+        const vol = Math.min(1, Math.max(0, volume));
+        sound.volume = vol;
+        
+        const audio = audioElements[soundId];
+        if (audio) {
+            audio.volume = vol;
+        }
+        
+        updateVolumeUI(soundId);
+        saveToStorage();
+    }
+
+    function playSound(soundId) {
+        const sound = sounds.find(s => s.id === soundId);
+        if (!sound) return;
+        
+        let audio = audioElements[soundId];
+        if (!audio) {
+            audio = createAudioElement(sound);
+            audioElements[soundId] = audio;
+        }
+        
+        audio.play().catch(e => console.warn("Erro ao reproduzir:", e));
+        sound.playing = true;
+        updateSoundUI(soundId);
+        saveToStorage();
+    }
+
+    function pauseSound(soundId) {
+        const audio = audioElements[soundId];
+        if (audio) {
+            audio.pause();
+            const sound = sounds.find(s => s.id === soundId);
+            if (sound) {
+                sound.currentTime = audio.currentTime;
+                sound.playing = false;
+            }
+        } else {
+            const sound = sounds.find(s => s.id === soundId);
+            if (sound) {
+                sound.playing = false;
+            }
+        }
+        updateSoundUI(soundId);
+        saveToStorage();
+    }
+
+    function stopSound(soundId) {
+        const audio = audioElements[soundId];
+        if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+            const sound = sounds.find(s => s.id === soundId);
+            if (sound) {
+                sound.currentTime = 0;
+                sound.playing = false;
+            }
+        } else {
+            const sound = sounds.find(s => s.id === soundId);
+            if (sound) {
+                sound.currentTime = 0;
+                sound.playing = false;
+            }
+        }
+        updateSoundUI(soundId);
+        saveToStorage();
+    }
+
+    function togglePlay(soundId) {
+        const sound = sounds.find(s => s.id === soundId);
+        if (!sound) return;
+        
+        if (sound.playing) {
+            stopSound(soundId);
+        } else {
+            playSound(soundId);
+        }
+    }
+
+    function removeSound(soundId) {
+        const audio = audioElements[soundId];
+        if (audio) {
+            audio.pause();
+            audio.src = '';
+            delete audioElements[soundId];
+        }
+        sounds = sounds.filter(s => s.id !== soundId);
+        renderSounds();
+        saveToStorage();
+    }
+
+    function updateSoundUI(soundId) {
+        const card = document.querySelector(`.sound-card[data-id="${soundId}"]`);
+        if (!card) return;
+        
+        const sound = sounds.find(s => s.id === soundId);
+        if (sound) {
+            const playBtn = card.querySelector('.play-btn');
+            if (playBtn) {
+                if (sound.playing) {
+                    playBtn.textContent = '⏹️';
+                    playBtn.classList.add('playing');
+                } else {
+                    playBtn.textContent = '▶️';
+                    playBtn.classList.remove('playing');
+                }
+            }
+        }
+    }
+
+    function updateVolumeUI(soundId) {
+        const card = document.querySelector(`.sound-card[data-id="${soundId}"]`);
+        if (!card) return;
+        
+        const sound = sounds.find(s => s.id === soundId);
+        if (sound) {
+            const slider = card.querySelector('.volume-slider');
+            const valueSpan = card.querySelector('.volume-value');
+            if (slider) slider.value = sound.volume;
+            if (valueSpan) valueSpan.textContent = Math.round(sound.volume * 100);
+        }
+    }
+
+    // =========================================
+    // RENDERIZAÇÃO
+    // =========================================
+    function renderSounds() {
+        if (!soundsContainer) return;
+        
+        if (sounds.length === 0) {
+            soundsContainer.innerHTML = '<div class="no-sounds">📢 Nenhum som disponível.</div>';
+            return;
+        }
+        
+        soundsContainer.innerHTML = '';
+        sounds.forEach(sound => {
+            const card = document.createElement('div');
+            card.className = 'sound-card';
+            card.setAttribute('data-id', sound.id);
+            
+            const playBtnText = sound.playing ? '⏹️' : '▶️';
+            const playBtnClass = sound.playing ? 'play-btn playing' : 'play-btn';
+            const volumePercent = Math.round((sound.volume !== undefined ? sound.volume : 0.7) * 100);
+            
+            card.innerHTML = `
+                <div class="sound-header">
+                    <div class="sound-name">${escapeHtml(sound.nome)}</div>
+                    <div class="sound-controls">
+                        <button class="control-btn ${playBtnClass}" data-action="play" data-id="${sound.id}">${playBtnText}</button>
+                        <button class="control-btn pause" data-action="pause" data-id="${sound.id}">⏸️</button>
+                        ${isGM ? `<button class="control-btn remove" data-action="remove" data-id="${sound.id}">🗑️</button>` : ''}
+                    </div>
+                </div>
+                <div class="volume-control">
+                    <span class="volume-label">🔊 Vol</span>
+                    <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="${sound.volume !== undefined ? sound.volume : 0.7}" data-action="volume" data-id="${sound.id}">
+                    <span class="volume-value">${volumePercent}%</span>
+                </div>
+                <div class="sound-url">${escapeHtml(sound.url)}</div>
+            `;
+            soundsContainer.appendChild(card);
+        });
+        
+        // Event listeners
+        document.querySelectorAll('[data-action="play"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                togglePlay(id);
+            });
+        });
+        
+        document.querySelectorAll('[data-action="pause"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                pauseSound(id);
+            });
+        });
+        
+        document.querySelectorAll('[data-action="volume"]').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                e.stopPropagation();
+                const id = slider.getAttribute('data-id');
+                const value = parseFloat(slider.value);
+                const volumeSpan = slider.closest('.sound-card')?.querySelector('.volume-value');
+                if (volumeSpan) volumeSpan.textContent = Math.round(value * 100);
+                setVolume(id, value);
+            });
+        });
+        
+        if (isGM) {
+            document.querySelectorAll('[data-action="remove"]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = btn.getAttribute('data-id');
+                    if (confirm('Remover este som da lista?')) {
+                        removeSound(id);
+                    }
+                });
+            });
+        }
+    }
+
+    // =========================================
+    // CRUD
+    // =========================================
+    function addSound(nome, url) {
+        if (!nome.trim() || !url.trim()) {
+            alert('Preencha o nome e a URL do som!');
+            return false;
+        }
+        
+        let finalUrl = url;
+        if (url.includes('dropbox.com') && !url.includes('dl.dropboxusercontent.com')) {
+            finalUrl = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+            if (!finalUrl.includes('?dl=1')) {
+                finalUrl += '?dl=1';
+            }
+        }
+        
+        const newSound = {
+            id: Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6),
+            nome: nome.trim(),
+            url: finalUrl,
+            playing: false,
+            currentTime: 0,
+            volume: 0.7
+        };
+        
+        sounds.push(newSound);
+        renderSounds();
+        saveToStorage();
+        return true;
+    }
+    
+    function exportSounds() {
+        const exportData = sounds.map(s => ({
+            nome: s.nome,
+            url: s.url,
+            volume: s.volume !== undefined ? s.volume : 0.7
+        }));
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `soundmaster_playlist_${new Date().toISOString().slice(0,19)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    
+    function importSoundsFromFile(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (Array.isArray(imported)) {
+                    let count = 0;
+                    imported.forEach(item => {
+                        if (item.nome && item.url) {
+                            const newId = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 6) + '_' + count;
+                            sounds.push({
+                                id: newId,
+                                nome: item.nome,
+                                url: item.url,
+                                playing: false,
+                                currentTime: 0,
+                                volume: item.volume !== undefined ? item.volume : 0.7
+                            });
+                            count++;
+                        }
+                    });
+                    renderSounds();
+                    saveToStorage();
+                    alert(`Importados ${count} sons!`);
+                } else {
+                    alert('Arquivo inválido: não é uma lista de sons.');
+                }
+            } catch(err) {
+                alert('Erro ao ler o arquivo: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+    
+    // =========================================
+    // PERSISTÊNCIA
+    // =========================================
+    async function saveToStorage() {
+        if (!currentPlayerId) return;
+        
+        const dataToSave = sounds.map(s => ({
+            id: s.id,
+            nome: s.nome,
+            url: s.url,
+            playing: false,
+            currentTime: 0,
+            volume: s.volume !== undefined ? s.volume : 0.7
+        }));
+        
+        try {
+            await OBR.room.setStorage({ sounds: dataToSave });
+        } catch(e) {
+            console.warn("Erro ao salvar:", e);
+        }
+    }
+    
+    async function loadFromStorage() {
+        try {
+            const storage = await OBR.room.getStorage();
+            if (storage.sounds && Array.isArray(storage.sounds)) {
+                sounds = storage.sounds.map(s => ({
+                    ...s,
+                    playing: false,
+                    currentTime: 0
+                }));
+            } else {
+                sounds = [];
+            }
+            renderSounds();
+        } catch(e) {
+            console.warn("Erro ao carregar:", e);
+            sounds = [];
+            renderSounds();
+        }
+    }
+    
+    // =========================================
+    // INICIALIZAÇÃO
+    // =========================================
+    async function init() {
+        await OBR.onReady();
+        
+        const role = await OBR.room.getRole();
+        isGM = (role === "HOST");
+        const player = await OBR.player.get();
+        currentPlayerId = player.id;
+        
+        if (isGM) {
+            gmControls.style.display = 'block';
+            playerMode.style.display = 'none';
+        } else {
+            gmControls.style.display = 'none';
+            playerMode.style.display = 'block';
+        }
+        
+        await loadFromStorage();
+        
+        if (isGM) {
+            btnAddSound.addEventListener('click', () => {
+                soundNameInput.value = '';
+                soundUrlInput.value = '';
+                soundModal.style.display = 'flex';
+            });
+            
+            btnCancelModal.addEventListener('click', () => {
+                soundModal.style.display = 'none';
+            });
+            
+            btnConfirmModal.addEventListener('click', () => {
+                const nome = soundNameInput.value.trim();
+                const url = soundUrlInput.value.trim();
+                if (addSound(nome, url)) {
+                    soundModal.style.display = 'none';
+                }
+            });
+            
+            btnExportList.addEventListener('click', exportSounds);
+            btnImportList.addEventListener('click', () => {
+                importFileInput.click();
+            });
+            
+            importFileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    importSoundsFromFile(e.target.files[0]);
+                    importFileInput.value = '';
+                }
+            });
+            
+            soundModal.addEventListener('click', (e) => {
+                if (e.target === soundModal) {
+                    soundModal.style.display = 'none';
+                }
+            });
+        }
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, (m) => {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    init();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "SoundMaster - Áudio para Owlbear",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "description": "Reprodução simultânea de áudios via Dropbox com controle de volume",
+  "action": {
+    "title": "SoundMaster",
+    "popover": "/",
+    "height": 620,
+    "width": 520
+  },
+  "permissions": []
+}
