@@ -1,14 +1,20 @@
 {
-  "name": "SoundMaster - Áudio para Owlbear",
+  "name": "SoundMaster",
   "version": "1.0.0",
   "manifest_version": 1,
-  "description": "Reprodução simultânea de áudios via Dropbox com controle de volume",
+  "description": "Reprodução simultânea de áudios sincronizada para RPG",
+  "author": "Seu Nome",
   "action": {
     "title": "SoundMaster",
     "icon": "/icon.svg",
     "popover": "/",
-    "height": 620,
-    "width": 520
+    "height": 600,
+    "width": 400
   },
-  "permissions": []
+  "permissions": [
+    {
+      "name": "autoplay",
+      "reason": "Necessário para reproduzir áudios automaticamente quando o mestre iniciar"
+    }
+  ]
 }
